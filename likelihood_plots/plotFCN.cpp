@@ -1,5 +1,6 @@
 #include <iostream>
 #include <vector>
+#include <memory>
 
 #include "TH1.h"
 #include "TFile.h"
@@ -25,14 +26,13 @@ int main(int argc, char* argv[])
     std::vector<std::string> par_names{"dx", "dy", "dz", "dphix", "dphiy", "dphiz"};
 
     std::vector<double> min{0,0,0,-0.001,0.002,-0.003};
-    // std::vector<double> calc{0.0008814953675, 0.0003422438033, 0.0007250105923, -0.0009827540176, 0.001959195753, -0.003001869471};
-    // std::vector<double> calc{2.190701597e-05, 0.000189086595, 0.0003711052282, -0.000987294831, 0.001957391141, -0.002997829718 };
-    std::vector<double> calc{0.000881503,0.000342246,0.000725021,-0.000982754,0.0019592,-0.00300187}; 
-    double fcn_min = -3075605.148; // likelihood value at true min
-    double fcn_calc = -3075848.501; // likelihood value at computed min
+    // std::vector<double> calc{0.0025515,0.00123325,-3.38116e-06,-0.00100059,0.00199937,-0.00300554};
+    std::vector<double> calc{0.004220027752, -0.0008546688361, -0.0006322012122, -0.001001412431, 0.001998622839, -0.003007030009};
 
-    // double fcn_min = -79644174.37; // likelihood value at true min
-    // double fcn_calc = -79650549.55; // likelihood value at computed min
+    double fcn_min = -696304.9155;
+    double fcn_calc = -696309.7327;
+    // double fcn_min = -1092747.362;// likelihood value at true min
+    // double fcn_calc = -1092751.216; // likelihood value at computed min
 
 
     if (argc >= 2 && plots)
@@ -73,29 +73,30 @@ int main(int argc, char* argv[])
                 if (cont_file)
                 {
                     char cont_name[30];
-                    sprintf(cont_name, "1sig_cnt_%s_%s", name_x, name_y);
+                    sprintf(cont_name, "2sig_cnt_%s_%s", name_x, name_y);
                     TGraph* cont = static_cast<TGraph*>(cont_file->Get(cont_name));
                     if (cont)
                     {
-                        cont->SetLineWidth(2);
+                        cont->SetLineWidth(3);
+                        // cont->SetLineColor(4);
                         cont->Draw("same");
-                        leg->AddEntry(cont, "1 sigma", "l");
-                    }
-                    sprintf(cont_name, "2sig_cnt_%s_%s", name_x, name_y);
-                    cont = static_cast<TGraph*>(cont_file->Get(cont_name));
-                    if (cont)
-                    {
-                        cont->SetLineWidth(2);
-                        cont->Draw("same");
-                        leg->AddEntry(cont, "2 sigma", "l");
+                        leg->AddEntry(cont, "70% CL", "l");
                     }
                     sprintf(cont_name, "3sig_cnt_%s_%s", name_x, name_y);
                     cont = static_cast<TGraph*>(cont_file->Get(cont_name));
                     if (cont)
                     {
-                        cont->SetLineWidth(2);
+                        cont->SetLineWidth(3);
                         cont->Draw("same");
-                        leg->AddEntry(cont, "3 sigma", "l");
+                        leg->AddEntry(cont, "90% CL", "l");
+                    }
+                    sprintf(cont_name, "4sig_cnt_%s_%s", name_x, name_y);
+                    cont = static_cast<TGraph*>(cont_file->Get(cont_name));
+                    if (cont)
+                    {
+                        cont->SetLineWidth(3);
+                        cont->Draw("same");
+                        leg->AddEntry(cont, "95% CL", "l");
                     }
                 }
 
@@ -200,33 +201,30 @@ int main(int argc, char* argv[])
                     char const* name_y = par_names[par2].c_str();
 
                     sprintf(buffer, "Contours %s vs %s; %s; %s", name_x, name_y, name_x, name_y);
+                    auto mg = std::make_unique<TMultiGraph>();
+                    mg->SetTitle(buffer);
 
                     TLegend* leg = new TLegend(0.15, 0.1, 0.35, 0.3);
                     char cont_name[30];
                     sprintf(cont_name, "2sig_cnt_%s_%s", name_x, name_y);
-                    TGraph* cont = static_cast<TGraph*>(cont_file->Get(cont_name));
-                    if (cont)
-                    {
-                        cont->SetLineWidth(2);
-                        cont->Draw();
-                        leg->AddEntry(cont, "2 sigma", "l");
-                    }
-                    sprintf(cont_name, "1sig_cnt_%s_%s", name_x, name_y);
-                    cont = static_cast<TGraph*>(cont_file->Get(cont_name));
-                    if (cont)
-                    {
-                        cont->SetLineWidth(2);
-                        cont->Draw("same");
-                        leg->AddEntry(cont, "1 sigma", "l");
-                    }
+                    auto cont_1 = static_cast<TGraph*>(cont_file->Get(cont_name));
+                    cont_1->SetLineWidth(3);
+                    mg->Add(cont_1, "lp");
+                    leg->AddEntry(cont_1, "70% CL", "l");
+                
                     sprintf(cont_name, "3sig_cnt_%s_%s", name_x, name_y);
-                    cont = static_cast<TGraph*>(cont_file->Get(cont_name));
-                    if (cont)
-                    {
-                        cont->SetLineWidth(2);
-                        cont->Draw("same");
-                        leg->AddEntry(cont, "3 sigma", "l");
-                    }
+                    auto cont_2 = static_cast<TGraph*>(cont_file->Get(cont_name));
+                    cont_2->SetLineWidth(3);
+                    mg->Add(cont_2, "lp");
+                    leg->AddEntry(cont_2, "90% CL", "l");
+        
+                    sprintf(cont_name, "4sig_cnt_%s_%s", name_x, name_y);
+                    auto cont_3 = static_cast<TGraph*>(cont_file->Get(cont_name));
+                    cont_3->SetLineWidth(3);
+                    mg->Add(cont_3, "lp");
+                    leg->AddEntry(cont_3, "95% CL", "l");
+
+                    mg->Draw("a");
 
                     TMarker* m_true;
                     if (!min.empty())
